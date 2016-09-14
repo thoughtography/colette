@@ -158,14 +158,14 @@ def get_quote(bot, update):
         bot.sendMessage(update.message.chat_id,
                 text=get_random_user_quote(user))
 
-def restart_git(bot, update):
-    """Restart the bot by exiting, forcing the container to reboot
-    """
-    try:
-        git = subprocess.check_output(['/usr/bin/git', 'pull', '/usr/src/app'])
-    except exception as e:
-        pass
-    sys.exit()
+#def restart_git(bot, update):
+#    """Restart the bot by exiting, forcing the container to reboot
+#    """
+#    try:
+#        git = subprocess.check_output(['/usr/bin/git', 'pull', '/usr/src/app'])
+#    except exception as e:
+#        pass
+#    sys.exit()
 
 @run_async
 def markov(bot, update):
@@ -343,7 +343,7 @@ def main():
     dp.add_handler(CommandHandler("delquote", delete_quote_by_id))
     dp.add_handler(CommandHandler("fig", figlet))
     dp.add_handler(CommandHandler("markov", markov))
-    dp.add_handler(CommandHandler("restart", restart_git))
+    #dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(InlineQueryHandler(inlinequery))
