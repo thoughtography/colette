@@ -157,6 +157,13 @@ def get_quote(bot, update):
         bot.sendMessage(update.message.chat_id,
                 text=get_random_user_quote(user))
 
+def restart_git(bot, update):
+    """Restart the bot by exiting, forcing the container to reboot
+    """
+    git = subprocess.Popen(['git', 'pull'], shell=True)
+    git.communicate()
+    sys.exit(0)
+
 @run_async
 def markov(bot, update):
     """Return a string of text from markov
@@ -331,6 +338,7 @@ def main():
     dp.add_handler(CommandHandler("delquote", delete_quote_by_id))
     dp.add_handler(CommandHandler("fig", figlet))
     dp.add_handler(CommandHandler("markov", markov))
+    dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(InlineQueryHandler(inlinequery))
