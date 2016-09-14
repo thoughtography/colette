@@ -161,7 +161,10 @@ def get_quote(bot, update):
 def restart_git(bot, update):
     """Restart the bot by exiting, forcing the container to reboot
     """
-    git = subprocess.check_output(['git', 'pull'])
+    try:
+        git = subprocess.check_output(['/usr/bin/git', 'pull', '/usr/src/app'])
+    except exception as e:
+        pass
     sys.exit()
 
 @run_async
