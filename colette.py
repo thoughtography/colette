@@ -1,20 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Simple Bot to reply to Telegram messages
-# This program is dedicated to the public domain under the CC0 license.
-"""
-This Bot uses the Updater class to handle the bot.
 
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
 
-Usage:
-Basic inline bot example. Applies different text transformations.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
 from uuid import uuid4
 
 import re
@@ -26,8 +12,8 @@ from telegram.ext import (Updater, InlineQueryHandler, CommandHandler, Filters,
 import logging
 import requests
 import urllib.parse
-from bsearch import find_book
-import bemail
+#from bsearch import find_book
+#import bemail
 import sqlite3
 import random
 import subprocess
@@ -189,10 +175,17 @@ def markov(bot, update):
 def channel_logger(bot, update):
     """Quip store
     """
+    global gays
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
+    if 'gay' in text.lower():
+        # Reply with the count of gays.
+        gaycount = gays.setdefault(username, 0) + 1
+        gays[username] += 1
+        bot.sendMessage(update.message.chat_id, text="{} has said 'gay' {} "
+                "times this session".format(username, gaycount))
     with open('markov_db', 'a') as f: 
         f.write('{0}\n'.format(text))
     mc.generateDatabase(text)
@@ -311,6 +304,8 @@ def error(bot, update, error):
 
 
 def main():
+    global gays
+    gays = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
 
