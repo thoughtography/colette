@@ -191,6 +191,8 @@ def channel_logger(bot, update):
     for word in words:
         if word in text.lower():
             # Reply with the count of gays.
+            if word not in buzzwords.keys():
+                buzzwords[word] = {}
             gaycount = buzzwords[word].setdefault(username, 0) + 1
             buzzwords[word][username] += 1
             bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
