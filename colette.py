@@ -175,17 +175,19 @@ def markov(bot, update):
 def channel_logger(bot, update):
     """Quip store
     """
-    global gays
+    global buzzwords
+    global words
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
-    if 'gay' in text.lower():
-        # Reply with the count of gays.
-        gaycount = gays.setdefault(username, 0) + 1
-        gays[username] += 1
-        bot.sendMessage(update.message.chat_id, text="{} has said 'gay' {} "
-                "times this session".format(username, gaycount))
+    for word in words:
+        if word in text.lower():
+            # Reply with the count of gays.
+            gaycount = buzzwords[word].setdefault(username, 0) + 1
+            buzzwords[word][username] += 1
+            bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
+                    "times this session".format(username, word, gaycount))
     with open('markov_db', 'a') as f: 
         f.write('{0}\n'.format(text))
     mc.generateDatabase(text)
@@ -304,8 +306,10 @@ def error(bot, update, error):
 
 
 def main():
-    global gays
-    gays = {}
+    global buzzwords
+    global words
+    words = ['gay', 'something something', 'nigger']
+    buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
 
