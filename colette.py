@@ -160,9 +160,8 @@ def get_quote(bot, update):
 def restart_git(bot, update):
     """Restart the bot by exiting, forcing the container to reboot
     """
-    git = subprocess.Popen(['git', 'pull'], shell=True)
-    git.communicate()
-    sys.exit(0)
+    git = subprocess.check_output(['git', 'pull'])
+    sys.exit()
 
 @run_async
 def markov(bot, update):
