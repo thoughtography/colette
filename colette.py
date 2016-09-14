@@ -10,6 +10,7 @@ from telegram import InlineQueryResultArticle, ParseMode, \
 from telegram.ext import (Updater, InlineQueryHandler, CommandHandler, Filters,
         MessageHandler)
 import logging
+import sys
 import requests
 import urllib.parse
 #from bsearch import find_book
