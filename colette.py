@@ -196,11 +196,11 @@ def channel_logger(bot, update):
         if word in text.lower():
             for c in lc_text.split(' '):
                 if c == word:
-                # Reply with the count of gays.
-                if word not in buzzwords.keys():
-                    buzzwords[word] = {}
-                gaycount = buzzwords[word].setdefault(username, 0) + 1
-                buzzwords[word][username] += 1
+                    # Reply with the count of gays.
+                    if word not in buzzwords.keys():
+                        buzzwords[word] = {}
+                    gaycount = buzzwords[word].setdefault(username, 0) + 1
+                    buzzwords[word][username] += 1
             bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
                     "times this session".format(username, word, gaycount))
     with open('markov_db', 'a') as f: 
