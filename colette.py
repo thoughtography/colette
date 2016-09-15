@@ -185,12 +185,14 @@ def markov(bot, update):
 def channel_logger(bot, update):
     """Quip store
     """
+    time_or_times = 'times'
     global buzzwords
     global words
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
+    output = '@{} has said '.format(username)
     for word in words:
         lc_text = text.lower()
         if word in text.lower():
@@ -199,9 +201,15 @@ def channel_logger(bot, update):
             if word not in buzzwords.keys():
                 buzzwords[word] = {}
             gaycount = buzzwords[word].setdefault(username, 0) + c
+            if gaycount == 1:
+                time_or_times = 'time'
             buzzwords[word][username] += c
-            bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
-                    "times this session".format(username, word, gaycount))
+            if 'time' in output:
+                output += "; '{}' {} {}".format(word, gaycount, time_or_times)
+            else:
+                output += "'{}' {} {}".format(word, gaycount, time_or_times)
+    bot.sendMessage(update.message.chat_id, text="{}"
+            "times this session".format(output))
     with open('markov_db', 'a') as f: 
         f.write('{0}\n'.format(text))
     mc.generateDatabase(text)
