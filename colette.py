@@ -323,7 +323,7 @@ def error(bot, update, error):
 def main():
     global buzzwords
     global words
-    words = ['gay', 'something something', 'nigger', 'i mean']
+    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
