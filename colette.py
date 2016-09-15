@@ -192,12 +192,15 @@ def channel_logger(bot, update):
     username = update.message.from_user.username
     channel = update.message.chat.title
     for word in words:
+        lc_text = text.lower()
         if word in text.lower():
-            # Reply with the count of gays.
-            if word not in buzzwords.keys():
-                buzzwords[word] = {}
-            gaycount = buzzwords[word].setdefault(username, 0) + 1
-            buzzwords[word][username] += 1
+            for c in lc_text.split(' '):
+                if c == word:
+                # Reply with the count of gays.
+                if word not in buzzwords.keys():
+                    buzzwords[word] = {}
+                gaycount = buzzwords[word].setdefault(username, 0) + 1
+                buzzwords[word][username] += 1
             bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
                     "times this session".format(username, word, gaycount))
     with open('markov_db', 'a') as f: 
@@ -320,7 +323,7 @@ def error(bot, update, error):
 def main():
     global buzzwords
     global words
-    words = ['gay', 'something something', 'nigger']
+    words = ['gay', 'something something', 'nigger', 'i mean']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
