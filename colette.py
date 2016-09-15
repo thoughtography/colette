@@ -210,7 +210,7 @@ def channel_logger(bot, update):
                 output += "'{}' {} {}".format(word, gaycount, time_or_times)
     if 'time' in output:
         bot.sendMessage(update.message.chat_id, text="{}"
-                "this session".format(output))
+                " this session".format(output))
     with open('markov_db', 'a') as f: 
         f.write('{0}\n'.format(text))
     mc.generateDatabase(text)
