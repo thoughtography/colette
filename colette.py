@@ -194,7 +194,7 @@ def channel_logger(bot, update):
     for word in words:
         lc_text = text.lower()
         if word in text.lower():
-            c = len(lc_text.split(word)-1
+            c = len(lc_text.split(word))-1
             # Reply with the count of gays.
             if word not in buzzwords.keys():
                 buzzwords[word] = {}
