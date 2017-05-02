@@ -168,6 +168,18 @@ def get_quote(bot, update):
 #    sys.exit()
 
 @run_async
+def math(bot, update):
+    text = update.message.text.split()
+    try:
+        if len([g for g in text[1] if g in string.ascii_letters])>0:
+            raise
+        math_result = eval(text[1])
+    except Exception as e:
+        math_result = 0
+    bot.sendMessage(update.message.chat_id, text=math_result)
+
+
+@run_async
 def markov(bot, update):
     """Return a string of text from markov
     """
@@ -343,6 +355,7 @@ def main():
     dp.add_handler(CommandHandler("delquote", delete_quote_by_id))
     dp.add_handler(CommandHandler("fig", figlet))
     dp.add_handler(CommandHandler("markov", markov))
+    dp.add_handler(CommandHandler("math", math))
     #dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
