@@ -197,21 +197,32 @@ def markov(bot, update):
 def channel_logger(bot, update):
     """Quip store
     """
+    time_or_times = 'times'
     global buzzwords
     global words
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
+    output = '@{} has said '.format(username)
     for word in words:
+        lc_text = text.lower()
         if word in text.lower():
+            c = len(lc_text.split(word))-1
             # Reply with the count of gays.
             if word not in buzzwords.keys():
                 buzzwords[word] = {}
-            gaycount = buzzwords[word].setdefault(username, 0) + 1
-            buzzwords[word][username] += 1
-            bot.sendMessage(update.message.chat_id, text="{} has said '{}' {} "
-                    "times this session".format(username, word, gaycount))
+            gaycount = buzzwords[word].setdefault(username, 0) + c
+            if gaycount == 1:
+                time_or_times = 'time'
+            buzzwords[word][username] += c
+            if 'time' in output:
+                output += "; '{}' {} {}".format(word, gaycount, time_or_times)
+            else:
+                output += "'{}' {} {}".format(word, gaycount, time_or_times)
+    if 'time' in output:
+        bot.sendMessage(update.message.chat_id, text="{}"
+                " this session".format(output))
     with open('markov_db', 'a') as f: 
         f.write('{0}\n'.format(text))
     mc.generateDatabase(text)
@@ -332,7 +343,7 @@ def error(bot, update, error):
 def main():
     global buzzwords
     global words
-    words = ['gay', 'something something', 'nigger']
+    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
