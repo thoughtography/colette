@@ -20,9 +20,14 @@ import random
 import subprocess
 import string
 from telegram.ext.dispatcher import run_async
+from googlefinance import getQuotes
 
+testing = False
 quotes_table = 'quotes'
 photos_table = 'photos'
+if testing:
+    quotes_table = 'quotes_test'
+    photos_table = 'photos_test'
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -446,6 +451,19 @@ def get_pikjur(bot, update):
                 photo=get_random_user_quote(user, room, photo=True))
 
 
+def get_stock(bot, update):
+    """ Get stock quotes """
+    line_s = update.message.text.split()
+    ticker = line_s[1].upper()
+    stock = getQuotes(ticker)
+    last_price = stock[0]["LastTradePrice"]
+    last_time = stock[0]["LastTradeDateTimeLong"]
+    div = stock[0].get("Dividend")
+    index = stock[0]["Index"]
+    bot.sendMessage(update.message.chat_id, "{{{0}}}[{1}] ${2} @{3} ({4})".format(index, ticker,
+        last_price, last_time, div))
+
+
 
 
 def main():
@@ -455,8 +473,10 @@ def main():
             'jesus edwin', '😢']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
-    updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
-    #updater = Updater("419014664:AAGAKhxZ1r0BLyWhLlkoomKzdA0otd3LiJE")
+    if testing:
+        updater = Updater("419014664:AAGAKhxZ1r0BLyWhLlkoomKzdA0otd3LiJE")
+    else:
+        updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -481,6 +501,7 @@ def main():
     dp.add_handler(CommandHandler("save", seve_pikjur))
     dp.add_handler(CommandHandler("get", get_pikjur))
     dp.add_handler(CommandHandler("git", get_pikjur))
+    dp.add_handler(CommandHandler("stock", get_stock))
     #dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
