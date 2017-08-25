@@ -38,6 +38,23 @@ def start(bot, update):
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='Help!')
 
+def search_quote_by_tag(tag, photo=False):
+    """Search for a quote
+    """
+    with sqlite3.connect('quipper') as conn:
+        c = conn.cursor()
+        db="quotes"
+        if photo:
+            db="photos"
+        tag = "%%%{0}%%%".format(tag)
+        print("select * from {0} where tag like {1}".format(db, tag))
+        c.execute('select * from {} where tag like ?'.format(db), (tag,))
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
+
 def search_quote_by_id(id, photo=False):
     """Search for a quote
     """
@@ -47,8 +64,11 @@ def search_quote_by_id(id, photo=False):
         if photo:
             db="photos"
         c.execute('select * from {} where x=?'.format(db), (id,))
-        quote = c.fetchone()[-1]
-    return quote
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote)
 
 def search_quote(search_str, photo=False):
     """Search for a quote
@@ -61,8 +81,11 @@ def search_quote(search_str, photo=False):
         c = conn.cursor()
         c.execute('select * from {} where quote like ? order by date desc'
                 ' limit 1'.format(db), (s_str,))
-        quote = c.fetchone()[-1]
-    return quote
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote)
 
 def get_random_quote(user=None, photo=False):
     """Get random quote from global or from user
@@ -73,7 +96,11 @@ def get_random_quote(user=None, photo=False):
         if photo:
             db="photos"
         c.execute('select * from {}'.format(db))
-        return random.choice(c.fetchall())[-1]
+        quote = random.choice(c.fetchall())
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
 
 @run_async
 def figlet(bot, update):
@@ -125,6 +152,9 @@ def get_random_user_quote(user, photo=False):
                 ' desc'.format(db) , (id,
             ))
         quote = random.choice(c.fetchall())
+        if photo:
+            photo_id = quote[4]
+            return photo_id
     return compile_quote(quote, user)
 
 def get_last_quote(user, photo=False):
@@ -142,11 +172,16 @@ def get_last_quote(user, photo=False):
         quote = c.fetchone()
         if photo:
             photo_id = quote[4]
-        return photo_id
+            return photo_id
     return compile_quote(quote, user)
 
-def compile_quote(quote, user):
+def compile_quote(quote, user=None):
     quote_id = quote[0]
+    if not user:
+        with sqlite3.connect('quipper') as conn:
+            c = conn.cursor()
+            c.execute('select * from users where id=?', (quote[2],))
+            user = c.fetchone()[1]
     quote_date = quote[1]
     quote_text = quote[3]
     return "[{0}]At {1} @{2} said ``{3}''".format(quote_id, quote_date, user,
@@ -200,11 +235,13 @@ def channel_logger(bot, update):
     time_or_times = 'times'
     global buzzwords
     global words
+    id = update.message.from_user.id
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
     output = '@{} has said '.format(username)
+    check_user_exist(id, username)
     for word in words:
         lc_text = text.lower()
         if word in text.lower():
@@ -227,6 +264,17 @@ def channel_logger(bot, update):
         f.write('{0} ({1}) [{2}]: {3}\n'.format(text_date, channel, username,
             text))
 
+def check_user_exist(id, username):
+    with sqlite3.connect('quipper') as conn:
+        c = conn.cursor()
+        c.execute('select * from users where id=?', (id,))
+        user = c.fetchone()
+        if not user:
+            c.execute('insert into users values (?, ?)', (id, username))
+        elif user[1] != username:
+            c.execute('update users set username=? where id=?', (username, id))
+
+
 def quipper_forward(bot, update):
     """Quip store
     """
@@ -236,9 +284,7 @@ def quipper_forward(bot, update):
     username = update.message.forward_from.username
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from users where id=?', (owner,))
-        if not c.fetchone():
-            c.execute('insert into users values (?, ?)', (owner, username))
+        check_user_exist(owner, username)
         print('insert into quotes (date, owner, quote) values ({}, {}, {})',
                 (quote_date, owner, quip))
         c.execute('insert into quotes (date, owner, quote) values (?, ?, ?)',
@@ -254,9 +300,7 @@ def quipper(bot, update):
     username = update.message.reply_to_message.from_user.username
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from users where id=?', (owner,))
-        if not c.fetchone():
-            c.execute('insert into users values (?, ?)', (owner, username))
+        check_user_exist(owner, username)
         print('insert into quotes (date, owner, quote) values ({}, {}, {})',
                 (quote_date, owner, quip))
         c.execute('insert into quotes (date, owner, quote) values (?, ?, ?)',
@@ -277,8 +321,8 @@ def register(bot, update):
             c = conn.cursor()
             c.execute("insert into users values (?, ?)", (userID, email))
             conn.commit()
-        bot.sendMessage(update.message.chat_id, text="You have been added to the"
-                " database with the email address '{0}'".format(email))
+        bot.sendMessage(update.message.chat_id, text="You have been added to"
+                " the database with the email address '{0}'".format(email))
     except Exception as e:
         bot.sendMessage(update.message.chat_id, text="You are already in the"
                 " database")
@@ -339,6 +383,7 @@ def seve_pikjur(bot, update):
     """Save a picture and returns it's identifier for recallability"""
     # update.message.reply_to_message
 
+    text = ' '.join(update.message.text.split()[1:])
     quip = update.message.reply_to_message.text
     owner = update.message.reply_to_message.from_user.id
     quote_date = update.message.reply_to_message.date
@@ -346,13 +391,13 @@ def seve_pikjur(bot, update):
     username = update.message.reply_to_message.from_user.username
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from users where id=?', (owner,))
-        if not c.fetchone():
-            c.execute('insert into users values (?, ?)', (owner, username))
-        print('insert into quotes (date, owner, quote, photo_id) values ({},'
-                ' {}, {}, {})', (quote_date, owner, quip, photo_id))
-        c.execute('insert into photos (date, owner, quote, photo_id) values'
-                ' (?, ?, ?, ?)', (quote_date, owner, quip, photo_id))
+        check_user_exist(owner, username)
+        print('insert into quotes (date, owner, quote, tag, photo_id) values'
+                ' ({},' ' {}, {}, {})', (quote_date, owner, quip, text,
+                photo_id))
+        c.execute('insert into photos (date, owner, quote, tag, photo_id)'
+                ' values (?, ?, ?, ?, ?)', (quote_date, owner, quip, text,
+                photo_id))
         conn.commit()
         c.execute('select * from photos order by x desc limit 1')
     bot.sendMessage(update.message.chat_id, c.fetchall()[0])
@@ -375,6 +420,10 @@ def get_pikjur(bot, update):
         id = line_s[2]
         bot.sendPhoto(update.message.chat_id, photo=search_quote_by_id(id,
             photo=True))
+    elif line_s[1] == '-t':
+        tag = ' '.join(line_s[2:])
+        bot.sendPhoto(update.message.chat_id, photo=search_quote_by_tag(tag,
+            photo=True))
     else:
         user = line_s[1].strip('@').strip()
         bot.sendPhoto(update.message.chat_id,
@@ -386,7 +435,8 @@ def get_pikjur(bot, update):
 def main():
     global buzzwords
     global words
-    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe']
+    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe',
+            'jesus edwin']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
@@ -410,7 +460,10 @@ def main():
     dp.add_handler(CommandHandler("fig", figlet))
     dp.add_handler(CommandHandler("math", math))
     dp.add_handler(CommandHandler("seve_pikjur", seve_pikjur))
-    dp.add_handler(CommandHandler("get_pikjur", get_pikjur))
+    dp.add_handler(CommandHandler("seve", seve_pikjur))
+    dp.add_handler(CommandHandler("save", seve_pikjur))
+    dp.add_handler(CommandHandler("get", get_pikjur))
+    dp.add_handler(CommandHandler("git", get_pikjur))
     #dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
