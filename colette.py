@@ -19,11 +19,8 @@ import sqlite3
 import random
 import subprocess
 import string
-from Markov import Markov
-from pymarkovchain import MarkovChain
 from telegram.ext.dispatcher import run_async
 
-mc = MarkovChain("./markov")
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -41,33 +38,69 @@ def start(bot, update):
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='Help!')
 
-def search_quote_by_id(id):
+def search_quote_by_tag(tag, photo=False):
     """Search for a quote
     """
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from quotes where x=?', (id,))
-        quote = c.fetchone()[3]
-    return quote
+        db="quotes"
+        if photo:
+            db="photos"
+        tag = "%%%{0}%%%".format(tag)
+        print("select * from {0} where tag like {1}".format(db, tag))
+        c.execute('select * from {} where tag like ?'.format(db), (tag,))
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
 
-def search_quote(search_str):
+def search_quote_by_id(id, photo=False):
+    """Search for a quote
+    """
+    with sqlite3.connect('quipper') as conn:
+        c = conn.cursor()
+        db="quotes"
+        if photo:
+            db="photos"
+        c.execute('select * from {} where x=?'.format(db), (id,))
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote)
+
+def search_quote(search_str, photo=False):
     """Search for a quote
     """
     s_str = "%%%{0}%%%".format(search_str)
     with sqlite3.connect('quipper') as conn:
+        db="quotes"
+        if photo:
+            db="photos"
         c = conn.cursor()
-        c.execute('select * from quotes where quote like ? order by date desc'
-                ' limit 1', (s_str,))
-        quote = c.fetchone()[3]
-    return quote
+        c.execute('select * from {} where quote like ? order by date desc'
+                ' limit 1'.format(db), (s_str,))
+        quote = c.fetchone()
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote)
 
-def get_random_quote(user=None):
+def get_random_quote(user=None, photo=False):
     """Get random quote from global or from user
     """
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from quotes')
-        return random.choice(c.fetchall())[3]
+        db="quotes"
+        if photo:
+            db="photos"
+        c.execute('select * from {}'.format(db))
+        quote = random.choice(c.fetchall())
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
 
 @run_async
 def figlet(bot, update):
@@ -78,10 +111,10 @@ def figlet(bot, update):
         bot.sendMessage(update.message.chat_id, text='No, dude')
     else:
 
-        fig = subprocess.check_output(['/usr/bin/figlet',
+        fig = subprocess.check_output(['/home/sloopdoop/tmp/figlet/figlet',
+            '-d', '/home/sloopdoop/tmp/figlet/fonts', 
             '{}'.format(fig_str)]).decode()
-        fig_str = """.
-    ```{}```""".format(fig)
+        fig_str = """```{}```""".format(fig)
         bot.sendMessage(update.message.chat_id, text=fig_str,
                 parse_mode="Markdown")
 
@@ -105,35 +138,52 @@ def delete_quote_by_id(bot, update):
         bot.sendMessage(update.message.chat_id, text="I couldn't delete the"
                 " quote. ({})".format(e))
 
-def get_random_user_quote(user):
+def get_random_user_quote(user, photo=False):
     """Get random quote from a user
     """
+    db="quotes"
+    if photo:
+        db="photos"
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
         c.execute('select * from users where username=?', (user,))
         id = c.fetchone()[0]
-        c.execute('select * from quotes where owner=? order by date desc' , (id,
+        c.execute('select * from {} where owner=? order by date'
+                ' desc'.format(db) , (id,
             ))
         quote = random.choice(c.fetchall())
-        quote_id = quote[0]
-        quote_date = quote[1]
-        quote_text = quote[3]
-    return "[{0}]At {1} @{2} said ``{3}''".format(quote_id, quote_date, user,
-            quote_text)
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
 
-def get_last_quote(user):
+def get_last_quote(user, photo=False):
     """Get last quote from a user
     """
+    db="quotes"
+    if photo:
+        db="photos"
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
         c.execute('select * from users where username=?', (user,))
         id = c.fetchone()[0]
-        c.execute('select * from quotes where owner=? order by date desc'
-                ' limit 1', (id, ))
+        c.execute('select * from {} where owner=? order by date desc'
+                ' limit 1'.format(db), (id, ))
         quote = c.fetchone()
-        quote_id = quote[0]
-        quote_date = quote[1]
-        quote_text = quote[3]
+        if photo:
+            photo_id = quote[4]
+            return photo_id
+    return compile_quote(quote, user)
+
+def compile_quote(quote, user=None):
+    quote_id = quote[0]
+    if not user:
+        with sqlite3.connect('quipper') as conn:
+            c = conn.cursor()
+            c.execute('select * from users where id=?', (quote[2],))
+            user = c.fetchone()[1]
+    quote_date = quote[1]
+    quote_text = quote[3]
     return "[{0}]At {1} @{2} said ``{3}''".format(quote_id, quote_date, user,
             quote_text)
 
@@ -144,7 +194,7 @@ def get_quote(bot, update):
 
     if len(line_s)<=1:
         bot.sendMessage(update.message.chat_id, text=get_random_quote())
-    if line_s[1] == '-l':
+    elif line_s[1] == '-l':
         user = line_s[2].strip('@').strip()
         bot.sendMessage(update.message.chat_id, text=get_last_quote(user))
     elif line_s[1] == '-s':
@@ -179,32 +229,19 @@ def math(bot, update):
     bot.sendMessage(update.message.chat_id, text=math_result)
 
 
-@run_async
-def markov(bot, update):
-    """Return a string of text from markov
-    """
-    text = update.message.text.split()
-    if len(text) > 1:
-        seed = ' '.join(text[1:])
-        markov_text = mc.generateStringWithSeed(seed)
-    else:
-        markov_text = mc.generateString()
-    #with open('markov') as markov_file:
-    #    chain = Markov(markov_file)
-    #    markov_text = chain.generate_markov_text()
-    bot.sendMessage(update.message.chat_id, text=markov_text)
-
 def channel_logger(bot, update):
     """Quip store
     """
     time_or_times = 'times'
     global buzzwords
     global words
+    id = update.message.from_user.id
     text = update.message.text
     text_date = update.message.date
     username = update.message.from_user.username
     channel = update.message.chat.title
     output = '@{} has said '.format(username)
+    check_user_exist(id, username)
     for word in words:
         lc_text = text.lower()
         if word in text.lower():
@@ -223,14 +260,21 @@ def channel_logger(bot, update):
     if 'time' in output:
         bot.sendMessage(update.message.chat_id, text="{}"
                 " this session".format(output))
-    with open('markov_db', 'a') as f: 
-        f.write('{0}\n'.format(text))
-    mc.generateDatabase(text)
-
-    dbdump = mc.dumpdb()
     with open('telegram_log', 'a') as f: 
         f.write('{0} ({1}) [{2}]: {3}\n'.format(text_date, channel, username,
             text))
+
+def check_user_exist(id, username):
+    with sqlite3.connect('quipper') as conn:
+        c = conn.cursor()
+        c.execute('select * from users where id=?', (id,))
+        user = c.fetchone()
+        if not user:
+            c.execute('insert into users values (?, ?)', (id, username))
+        elif user[1] != username:
+            c.execute('update users set username=? where id=?', (username, id))
+
+
 def quipper_forward(bot, update):
     """Quip store
     """
@@ -240,9 +284,7 @@ def quipper_forward(bot, update):
     username = update.message.forward_from.username
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from users where id=?', (owner,))
-        if not c.fetchone():
-            c.execute('insert into users values (?, ?)', (owner, username))
+        check_user_exist(owner, username)
         print('insert into quotes (date, owner, quote) values ({}, {}, {})',
                 (quote_date, owner, quip))
         c.execute('insert into quotes (date, owner, quote) values (?, ?, ?)',
@@ -258,9 +300,7 @@ def quipper(bot, update):
     username = update.message.reply_to_message.from_user.username
     with sqlite3.connect('quipper') as conn:
         c = conn.cursor()
-        c.execute('select * from users where id=?', (owner,))
-        if not c.fetchone():
-            c.execute('insert into users values (?, ?)', (owner, username))
+        check_user_exist(owner, username)
         print('insert into quotes (date, owner, quote) values ({}, {}, {})',
                 (quote_date, owner, quip))
         c.execute('insert into quotes (date, owner, quote) values (?, ?, ?)',
@@ -281,8 +321,8 @@ def register(bot, update):
             c = conn.cursor()
             c.execute("insert into users values (?, ?)", (userID, email))
             conn.commit()
-        bot.sendMessage(update.message.chat_id, text="You have been added to the"
-                " database with the email address '{0}'".format(email))
+        bot.sendMessage(update.message.chat_id, text="You have been added to"
+                " the database with the email address '{0}'".format(email))
     except Exception as e:
         bot.sendMessage(update.message.chat_id, text="You are already in the"
                 " database")
@@ -339,11 +379,64 @@ def inlinequery(bot, update):
 def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
+def seve_pikjur(bot, update):
+    """Save a picture and returns it's identifier for recallability"""
+    # update.message.reply_to_message
+
+    text = ' '.join(update.message.text.split()[1:])
+    quip = update.message.reply_to_message.text
+    owner = update.message.reply_to_message.from_user.id
+    quote_date = update.message.reply_to_message.date
+    photo_id = update.message.reply_to_message.photo[-1].file_id
+    username = update.message.reply_to_message.from_user.username
+    with sqlite3.connect('quipper') as conn:
+        c = conn.cursor()
+        check_user_exist(owner, username)
+        print('insert into quotes (date, owner, quote, tag, photo_id) values'
+                ' ({},' ' {}, {}, {})', (quote_date, owner, quip, text,
+                photo_id))
+        c.execute('insert into photos (date, owner, quote, tag, photo_id)'
+                ' values (?, ?, ?, ?, ?)', (quote_date, owner, quip, text,
+                photo_id))
+        conn.commit()
+        c.execute('select * from photos order by x desc limit 1')
+    bot.sendMessage(update.message.chat_id, c.fetchall()[0])
+
+def get_pikjur(bot, update):
+    line_s = update.message.text.split()
+
+    if len(line_s)<=1:
+        bot.sendPhoto(update.message.chat_id,
+                photo=get_random_quote(photo=True))
+    elif line_s[1] == '-l':
+        user = line_s[2].strip('@').strip()
+        bot.sendPhoto(update.message.chat_id, photo=get_last_quote(user,
+            photo=True))
+    elif line_s[1] == '-s':
+        search_str = ' '.join(line_s[2:])
+        bot.sendPhoto(update.message.chat_id, photo=search_quote(search_str,
+            photo=True))
+    elif line_s[1] == '-i':
+        id = line_s[2]
+        bot.sendPhoto(update.message.chat_id, photo=search_quote_by_id(id,
+            photo=True))
+    elif line_s[1] == '-t':
+        tag = ' '.join(line_s[2:])
+        bot.sendPhoto(update.message.chat_id, photo=search_quote_by_tag(tag,
+            photo=True))
+    else:
+        user = line_s[1].strip('@').strip()
+        bot.sendPhoto(update.message.chat_id,
+                photo=get_random_user_quote(user, photo=True))
+
+
+
 
 def main():
     global buzzwords
     global words
-    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe']
+    words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe',
+            'jesus edwin']
     buzzwords = {}
     # Create the Updater and pass it your bot's token.
     updater = Updater("239641029:AAET8NqR9uef_JccleEY9oHsZsdvw4-ZD7Y")
@@ -355,8 +448,8 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("register", register))
-    dp.add_handler(CommandHandler("bemail", email))
-    dp.add_handler(CommandHandler("bsearch", search))
+    #dp.add_handler(CommandHandler("bemail", email))
+    #dp.add_handler(CommandHandler("bsearch", search))
     dp.add_handler(CommandHandler("google", get_ifl_link))
     dp.add_handler(CommandHandler("Google", get_ifl_link))
     dp.add_handler(CommandHandler("quote", quipper))
@@ -365,8 +458,12 @@ def main():
     dp.add_handler(CommandHandler("getquote", get_quote))
     dp.add_handler(CommandHandler("delquote", delete_quote_by_id))
     dp.add_handler(CommandHandler("fig", figlet))
-    dp.add_handler(CommandHandler("markov", markov))
     dp.add_handler(CommandHandler("math", math))
+    dp.add_handler(CommandHandler("seve_pikjur", seve_pikjur))
+    dp.add_handler(CommandHandler("seve", seve_pikjur))
+    dp.add_handler(CommandHandler("save", seve_pikjur))
+    dp.add_handler(CommandHandler("get", get_pikjur))
+    dp.add_handler(CommandHandler("git", get_pikjur))
     #dp.add_handler(CommandHandler("restart", restart_git))
 
     # on noncommand i.e message - echo the message on Telegram
@@ -377,7 +474,7 @@ def main():
 
     # Add message handler for quips!
     #dp.add_handler(MessageHandler([Filters.text], quipper))
-    dp.add_handler(MessageHandler([Filters.text], channel_logger))
+    dp.add_handler(MessageHandler(Filters.text, channel_logger))
 
     # Start the Bot
     updater.start_polling()
