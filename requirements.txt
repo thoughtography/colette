@@ -1,0 +1,4 @@
+future==0.15.2
+PyMarkovChain==1.8
+python-telegram-bot==4.2.0
+requests==2.10.0

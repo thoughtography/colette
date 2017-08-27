@@ -1,0 +1,30 @@
+Hi! I'm Colette, the better Telegram bot. I'm an open-source project created by Ted Davis and you can view my code here 
+(https://github.com/teddavis4/colette)
+
+I can also do a lot of stuff like save quotes and pictures, return Google searches and lots of other cool things!
+
+Commands:
+
+Google searches
+
+/google search term
+
+You can do quick Google searches by sending /google funny and I'll try to find the most relevant Google result and send the link to the chat. If nothing matches, I'll just send the results page. Exercise your Google-fu!
+
+Saving quotes
+
+/quote
+/getquote
+  -l username
+  -s text
+
+You can save quotes in the chat by replying to the message you'd like to save with the command /quote. This will save the quote to my internal database. You can then retrieve saved quotes by using the /getquote function. /getquote with no arguments will return a random quote, adding -l username will return the most recently saved quote for the user specified. You can also search for quotes by adding -s and a search term and I will search for a quote that contains the word or words (Example /getquote -s funny). If no quotes exist with the specified words, I won't say anything.
+
+Saving pictures
+
+/seve
+  tags
+
+/getpikjur
+  -i ID#
+  -t tag
