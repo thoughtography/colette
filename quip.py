@@ -87,10 +87,13 @@ class Quip:
         """
         room = update.message.chat.id
         db = self.quotes_table
+        room = update.message.chat.id
         id = update.message.from_user.id
-        if id != 127511991:
-            return
         quote_id = update.message.text.split()[1]
+        if self.user.get_user_privilege(id, room) != 'admin':
+            bot.sendMessage(update.message.chat_id, text="You are not"
+                    " privileged to do this")
+            return
 
         try:
             with sqlite3.connect('quipper') as conn:
@@ -184,9 +187,10 @@ class Quip:
         owner = update.message.forward_from.id
         quote_date = update.message.forward_date
         username = update.message.forward_from.username
+        room = update.message.chat.id
         with sqlite3.connect('quipper') as conn:
             c = conn.cursor()
-            self.user.check_user_exist(owner, username)
+            self.user.check_user_exist(owner, username, room)
             print('insert into {0} (date, owner, quote, room) values ({1}, {2},'
                     ' {3}, {4})', (db, quote_date, owner, quip, room))
             c.execute('insert into {0} (date, owner, quote, room) values (?, ?,'
@@ -204,7 +208,7 @@ class Quip:
         room = update.message.chat.id
         with sqlite3.connect('quipper') as conn:
             c = conn.cursor()
-            self.user.check_user_exist(owner, username)
+            self.user.check_user_exist(owner, username, room)
             print('insert into {0} (date, owner, quote, room) values ({1}, {2},'
                     ' {3}, {4})', (quote_date, owner, quip, room))
             c.execute('insert into {0} (date, owner, quote, room) values (?, ?,'
@@ -225,7 +229,7 @@ class Quip:
         username = update.message.reply_to_message.from_user.username
         with sqlite3.connect('quipper') as conn:
             c = conn.cursor()
-            self.user.check_user_exist(owner, username)
+            self.user.check_user_exist(owner, username, room)
             print('insert into {} (date, owner, quote, tag, photo_id) values'
                     ' ({},' ' {}, {}, {})', (db, quote_date, owner, quip, text,
                     photo_id, room))
