@@ -20,12 +20,13 @@ import random
 import subprocess
 import string
 from telegram.ext.dispatcher import run_async
-from googlefinance import getQuotes
 from quip import Quip
 from user import User
 from search import Search
 
 TEST=True
+
+user = User(testing=TEST)
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -65,7 +66,7 @@ def channel_logger(bot, update):
     username = update.message.from_user.username
     channel = update.message.chat.title
     output = '@{} has said '.format(username)
-    check_user_exist(id, username)
+    user.check_user_exist(id, username)
     for word in words:
         lc_text = text.lower()
         if word in text.lower():
@@ -136,7 +137,7 @@ def main():
     global buzzwords
     global words
 
-    quip = Quip(testing=TEST)
+    quip = Quip(user, testing=TEST)
     search = Search()
 
     words = ['gay', 'something something', 'nigger', 'i mean', 'guttersnipe',
@@ -159,17 +160,17 @@ def main():
         allow_edited=True))
     dp.add_handler(CommandHandler("Google", search.get_ifl_link,
         allow_edited=True))
-    #dp.add_handler(CommandHandler("quote", quipper))
-    #dp.add_handler(CommandHandler("quip", quipper))
-    #dp.add_handler(CommandHandler("getq", get_quote))
-    #dp.add_handler(CommandHandler("getquote", get_quote))
-    #dp.add_handler(CommandHandler("delquote", delete_quote_by_id))
+    dp.add_handler(CommandHandler("quote", quip.quipper))
+    dp.add_handler(CommandHandler("quip", quip.quipper))
+    dp.add_handler(CommandHandler("getq", quip.get_quote))
+    dp.add_handler(CommandHandler("getquote", quip.get_quote))
+    dp.add_handler(CommandHandler("delquote", quip.delete_quote_by_id))
     dp.add_handler(CommandHandler("math", math))
-    #dp.add_handler(CommandHandler("seve_pikjur", seve_pikjur))
-    #dp.add_handler(CommandHandler("seve", seve_pikjur))
-    #dp.add_handler(CommandHandler("save", seve_pikjur))
-    #dp.add_handler(CommandHandler("get", get_pikjur))
-    #dp.add_handler(CommandHandler("git", get_pikjur))
+    dp.add_handler(CommandHandler("seve_pikjur", quip.seve_pikjur))
+    dp.add_handler(CommandHandler("seve", quip.seve_pikjur))
+    dp.add_handler(CommandHandler("save", quip.seve_pikjur))
+    dp.add_handler(CommandHandler("get", quip.get_pikjur))
+    dp.add_handler(CommandHandler("git", quip.get_pikjur))
     dp.add_handler(CommandHandler("stock", search.get_stock))
     #dp.add_handler(CommandHandler("restart", restart_git))
 

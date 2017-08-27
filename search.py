@@ -4,6 +4,8 @@ import sqlite3
 from telegram.ext.dispatcher import run_async
 import urllib.parse
 import requests
+from googlefinance import getQuotes
+from google import google
 
 class Search:
     def __init__(self, testing=False):
@@ -11,11 +13,9 @@ class Search:
     @run_async
     def get_ifl_link(self, bot, update):
         query = update.message.text.split(' ', 1)[1]
-        var = requests.get( r'http://www.google.com/search?q={0}&btnI'.format(
-            urllib.parse.quote_plus(query) ))
-
-        bot.sendMessage(update.message.chat_id, text=var.url)
-
+        search_results = google.search(query)
+        result = search_results[0]
+        bot.sendMessage(update.message.chat_id, text=result.link)
 
     def get_stock(self, bot, update):
         """ Get stock quotes """
