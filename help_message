@@ -1,30 +1,40 @@
 Hi! I'm Colette, the better Telegram bot. I'm an open-source project created by Ted Davis and you can view my code here 
-(https://github.com/teddavis4/colette)
+ https://github.com/teddavis4/colette
 
-I can also do a lot of stuff like save quotes and pictures, return Google searches and lots of other cool things!
+I can also do a lot of stuff like save messages as quotes, save pictures, search for stuff on Google and lots of other cool things!
 
 Commands:
 
 Google searches
 
-/google search term
+`/google search term`
 
-You can do quick Google searches by sending /google funny and I'll try to find the most relevant Google result and send the link to the chat. If nothing matches, I'll just send the results page. Exercise your Google-fu!
+You can do quick Google searches by sending `/google search term` and I'll try to find the most relevant Google result and send the link to the chat. If nothing matches, I'll just send the results page. Exercise your Google-fu!
 
-Saving quotes
+Saving messages
 
-/quote
+```/quote 
 /getquote
-  -l username
-  -s text
+   -l username
+   -s text```
 
-You can save quotes in the chat by replying to the message you'd like to save with the command /quote. This will save the quote to my internal database. You can then retrieve saved quotes by using the /getquote function. /getquote with no arguments will return a random quote, adding -l username will return the most recently saved quote for the user specified. You can also search for quotes by adding -s and a search term and I will search for a quote that contains the word or words (Example /getquote -s funny). If no quotes exist with the specified words, I won't say anything.
+You can save quotes in the chat by replying to the message with the command `/quote`. This will save the quote to my internal database. You can then retrieve saved quotes by using the `/getquote` command. `/getquote` with no arguments will return a random quote, adding `-l username` will return the most recently saved quote for the user specified. You can also search for quotes by adding -s and a search term and I will search for a quote that contains the word or words (Example /getquote -s funny). You can also use `-s username` to return quotes from a specific user. If no quotes exist with the specified words, I won't say anything.
 
 Saving pictures
 
-/seve
-  tags
+```/seve
+   tags
 
-/getpikjur
-  -i ID#
-  -t tag
+/git
+   -i ID#
+   -t tag```
+
+I can save pictures as well. Reply to a picture with the command `/seve` and I'll make a note of the picture ID and save it for later. If you want to tag the photo, add tags after the command like `/seve cool picture`. When you want to retrieve a picture, you can send `/git`, which I'll respond to with a random picture from my database. If you want to see a specific picture, you can use the `/git -t tags` string for return photos with specific tags or the `/git -i ##` where the ## is the ID number of the picture, which can be seen in my original seve confirmation message.
+
+Getting stock quotes
+
+```/stock
+  ticker```
+
+
+I'll can return current stock prices with the command `/stock TICKER` where ticker is replaced with a ticker ID, such as FB, AAPL, etc. These prices are current market and do not reflect after-hours or pre-market trading.
